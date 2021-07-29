@@ -11,8 +11,9 @@ import (
 )
 
 func main() {
-	initDB()
-
+	if err := initDB(); err != nil {
+		log.Fatal(err)
+	}
 	router := gin.Default()
 	// router.GET("/albums/:id", getAlbumByID)
 	// router.POST("/albums", postAlbums)
@@ -22,7 +23,9 @@ func main() {
 		port = "8080"
 		log.Printf("Defaulting to port %s", port)
 	}
-	router.Run(":", port)
+	if err := router.Run(":", port); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func indexHandler(c *gin.Context) {
@@ -40,6 +43,7 @@ func postAlbums(c *gin.Context) {
 	// Call BindJSON to bind the received JSON to
 	// newAlbum.
 	if err := c.BindJSON(&newAlbum); err != nil {
+		c.IndentedJSON(http.StatusBadRequest, gin.H{"message": "unable to add album"})
 		return
 	}
 	albID, err := albDB.addAlbum(newAlbum)
@@ -61,6 +65,7 @@ func getAlbumByID(c *gin.Context) {
 	albID := c.Param("id")
 	id, err := strconv.ParseInt(albID, 0, 64)
 	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"message": "unable to get album"})
 		return
 	}
 	album, err := albDB.albumByID(id)

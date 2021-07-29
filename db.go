@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/go-sql-driver/mysql"
@@ -22,7 +21,7 @@ type albumDB struct {
 
 var albDB albumDB
 
-func initDB() {
+func initDB() error {
 	// Capture connection properties.
 	cfg := mysql.Config{
 		User:   os.Getenv("DBUSER"),
@@ -35,14 +34,13 @@ func initDB() {
 	var err error
 	db, err := sql.Open("mysql", cfg.FormatDSN())
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("initDB %d: unable to initialize database", err)
 	}
-	pingErr := db.Ping()
-	if pingErr != nil {
-		log.Fatal(pingErr)
+	if err := db.Ping(); err != nil {
+		return fmt.Errorf("initDB %d: unable to verify connection", err)
 	}
-	fmt.Println("Connected!")
 	albDB.db = db
+	return nil
 }
 
 // albumByID queries for the album with the specified ID.
@@ -53,9 +51,9 @@ func (albDB *albumDB) albumByID(id int64) (Album, error) {
 	row := albDB.db.QueryRow("SELECT * FROM album WHERE id = ?", id)
 	if err := row.Scan(&alb.ID, &alb.Title, &alb.Artist, &alb.Price); err != nil {
 		if err == sql.ErrNoRows {
-			return alb, fmt.Errorf("albumsById %d: no such album", id)
+			return alb, fmt.Errorf("albumById %d: no such album", id)
 		}
-		return alb, fmt.Errorf("albumsById %d: %v", id, err)
+		return alb, fmt.Errorf("albumById %d: %v", id, err)
 	}
 	return alb, nil
 }
