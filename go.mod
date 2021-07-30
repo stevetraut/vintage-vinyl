@@ -1,4 +1,4 @@
-module example/vintage-vinyl
+module github.com/stevetraut/vintage-vinyl
 
 go 1.16
 
